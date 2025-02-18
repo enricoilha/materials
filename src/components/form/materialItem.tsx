@@ -10,11 +10,12 @@ import { motion } from "motion/react";
 interface MaterialItemProps {
   index: number;
   remove: () => unknown;
+  options: { label: string; value: string }[] | [];
 }
 
 type FormType = z.infer<typeof materialSchema>;
 
-export const MaterialItem = ({ index, remove }: MaterialItemProps) => {
+export const MaterialItem = ({ index, remove, options }: MaterialItemProps) => {
   const {
     formState: { errors },
   } = useFormContext<FormType>();
@@ -37,7 +38,7 @@ export const MaterialItem = ({ index, remove }: MaterialItemProps) => {
         <Combobox
           label="Nome do item"
           name={`materials.${index}.material_id`}
-          options={[{ label: "xxx", value: "123-32313-33" }]}
+          options={options}
           error={errors.materials?.[index]?.material_id}
         />
         {errors.materials?.[index]?.material_id && (
