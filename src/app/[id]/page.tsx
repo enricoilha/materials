@@ -1,14 +1,17 @@
 "use client";
 
 import { MaterialItem } from "@/components/form/materialItem";
+import { TotalPrice } from "@/components/form/TotalPrice";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { materialSchema } from "@/schemas/materialForm";
+import { usePriceStore } from "@/stores/material-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -16,20 +19,24 @@ type FormType = z.infer<typeof materialSchema>;
 
 export default function FormPage() {
   const { id } = useParams();
+  const { resetStore, totalPrice } = usePriceStore((state) => state);
   const { data, isLoading, error } = useQuery({
     queryKey: ["form-select"],
     queryFn: async () => {
-      const { error: checkError } = await supabase
+      const { data: checkData, error: checkError } = await supabase
         .from("listas")
-        .select("id")
+        .select("id, status")
         .eq("id", id as string)
         .single();
 
       if (checkError) throw new Error("Não existe uma lista válida");
+      if (checkData.status === "filled") {
+        throw new Error("Lista já preenchida");
+      }
 
       const { data, error } = await supabase
         .from("materiais")
-        .select("id, materiais");
+        .select("id, materiais, preco");
 
       if (error) {
         throw error;
@@ -37,6 +44,7 @@ export default function FormPage() {
       const transformedData = data.map((item) => ({
         label: item.materiais,
         value: item.id,
+        preco: item.preco,
       }));
 
       return transformedData;
@@ -74,16 +82,24 @@ export default function FormPage() {
 
     const { error: updateError } = await supabase
       .from("listas")
-      .update({ status: "filled", filled_at: new Date() })
+      .update({
+        status: "filled",
+        filled_at: new Date(),
+        preco_total: totalPrice,
+      })
       .eq("id", id as string);
 
     return console.log(err, updateError);
   }
 
+  useEffect(() => {
+    resetStore();
+  }, [resetStore]);
+
   return (
     <div className="max-w-[100vw] h-screen">
       <Header />
-      <main className="flex flex-col mx-auto items-center justify-center mt-3 max-w-screen ">
+      <main className="flex flex-col mx-auto items-center justify-center mt-3 pb-8 max-w-screen ">
         {isLoading ? (
           <div>Carregando</div>
         ) : (
@@ -91,6 +107,9 @@ export default function FormPage() {
             {!error ? (
               data && (
                 <>
+                  <div className="w-full p-4">
+                    <TotalPrice />
+                  </div>
                   <p className="text-base text-muted-foreground mb-5">
                     Insira os materiais que precisa
                   </p>
@@ -133,7 +152,9 @@ export default function FormPage() {
                 </>
               )
             ) : (
-              <div>Lista não encontrada</div>
+              <div className="text-center p-4 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-500">
+                {error.message}
+              </div>
             )}
           </>
         )}

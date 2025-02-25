@@ -80,6 +80,7 @@ export type Database = {
           filled_at: string | null
           id: string
           month: string | null
+          preco_total: number | null
           profissional_id: string
           status: string
         }
@@ -90,6 +91,7 @@ export type Database = {
           filled_at?: string | null
           id?: string
           month?: string | null
+          preco_total?: number | null
           profissional_id: string
           status?: string
         }
@@ -100,6 +102,7 @@ export type Database = {
           filled_at?: string | null
           id?: string
           month?: string | null
+          preco_total?: number | null
           profissional_id?: string
           status?: string
         }
@@ -125,21 +128,21 @@ export type Database = {
           created_at: string | null
           id: string
           materiais: string
-          preco: number | null
+          preco: number
           tipo: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           materiais: string
-          preco?: number | null
+          preco?: number
           tipo?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           materiais?: string
-          preco?: number | null
+          preco?: number
           tipo?: string | null
         }
         Relationships: []

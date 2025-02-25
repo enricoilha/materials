@@ -4,7 +4,7 @@ import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useFormContext, Controller, FieldError } from "react-hook-form";
 import Fuse from "fuse.js";
-import { cn } from "@/lib/utils";
+import { capitalizeWords, cn, formatToReais } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -38,7 +38,7 @@ const normalizeString = (str: string) =>
 interface ComboboxProps {
   name: keyof FormType | `materials.${number}.material_id`;
   label?: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; preco: number }[];
   placeholder?: string;
   error?: FieldError;
 }
@@ -97,8 +97,10 @@ export function Combobox({
                 )}
               >
                 {field.value
-                  ? options.find((option) => option.value === field.value)
-                      ?.label
+                  ? capitalizeWords(
+                      options.find((option) => option.value === field.value)
+                        ?.label
+                    )
                   : placeholder}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -124,6 +126,7 @@ export function Combobox({
                   <CommandGroup>
                     {filteredOptions.map((option) => (
                       <CommandItem
+                        className="text-xs"
                         key={option.value}
                         value={option.value}
                         onSelect={(currentValue) => {
@@ -134,7 +137,14 @@ export function Combobox({
                           setSearchValue("");
                         }}
                       >
-                        {option.label}
+                        <div className="flex flex-col space-y-1 w-full">
+                          <p className="w-full truncate">
+                            {capitalizeWords(option.label)}
+                          </p>
+                          <p className="text-muted-foreground">
+                            R$ {formatToReais(option.preco)}
+                          </p>
+                        </div>
                         <Check
                           className={cn(
                             "ml-auto h-4 w-4",

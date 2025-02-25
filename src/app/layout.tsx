@@ -1,13 +1,12 @@
-// layout.tsx
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import AuthListener from "@/components/AuthListener";
 import "./globals.css";
 import { QueryClientProviderComponent } from "@/providers/QueryClient";
 import { AppSidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -23,9 +22,7 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <SidebarProvider>
           <QueryClientProviderComponent>
             <AuthListener />

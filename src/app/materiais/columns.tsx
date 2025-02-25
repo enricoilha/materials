@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { InputPreco } from "@/components/InputPreco";
 
 export type Material = {
   id: string;
@@ -67,24 +67,7 @@ export const columns: ColumnDef<Material>[] = [
       );
     },
     cell: ({ row, table }) => {
-      const preco = Number.parseFloat(row.getValue("preco"));
-
-      const updateData = (value: string) => {
-        const newValue = Number.parseFloat(value);
-        if (!isNaN(newValue)) {
-          table.options.meta?.updateData(row.index, "preco", newValue);
-        }
-      };
-
-      return (
-        <Input
-          type="number"
-          value={preco}
-          onChange={(e) => updateData(e.target.value)}
-          className="w-24 text-right"
-          step="0.01"
-        />
-      );
+      return <InputPreco row={row} table={table} />;
     },
   },
 ];
