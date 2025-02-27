@@ -5,6 +5,7 @@ import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { InputPreco } from "@/components/InputPreco";
+import { capitalizeWords } from "@/lib/utils";
 
 export type Material = {
   id: string;
@@ -28,6 +29,7 @@ export const columns: ColumnDef<Material>[] = [
         </Button>
       );
     },
+    cell: ({ row }) => <div>{capitalizeWords(row.getValue("materiais"))}</div>,
   },
   {
     accessorKey: "tipo",
@@ -50,7 +52,7 @@ export const columns: ColumnDef<Material>[] = [
         Vidro: "bg-emerald-500",
         Plástico: "bg-purple-500",
       };
-      return <Badge variant={"outline"}>{tipo}</Badge>;
+      return <Badge variant={"secondary"}>{tipo}</Badge>;
     },
   },
   {

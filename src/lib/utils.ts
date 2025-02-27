@@ -29,3 +29,17 @@ export const parseFromReais = (formatted: string): number => {
 
   return Math.round(parseFloat(normalized || "0") * 100);
 };
+
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+export function truncateString(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  return `${str.substring(0, maxLength)}...`;
+}
+export function formatId(id: string): string {
+  return id.substring(0, 8).toUpperCase();
+}

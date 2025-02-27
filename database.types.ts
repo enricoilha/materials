@@ -158,6 +158,7 @@ export type Database = {
           id_clinica: number | null
           login: string | null
           nome: string
+          senha: string | null
           sindicato: string | null
           telefone: string | null
         }
@@ -171,6 +172,7 @@ export type Database = {
           id_clinica?: number | null
           login?: string | null
           nome: string
+          senha?: string | null
           sindicato?: string | null
           telefone?: string | null
         }
@@ -184,6 +186,7 @@ export type Database = {
           id_clinica?: number | null
           login?: string | null
           nome?: string
+          senha?: string | null
           sindicato?: string | null
           telefone?: string | null
         }

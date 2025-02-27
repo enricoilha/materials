@@ -80,7 +80,7 @@ export function DataTable({ data }: { data: Material[] }) {
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border p-6 ">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

@@ -15,7 +15,7 @@ const formSchema = z.object({
     .min(1, { message: "Campo obrigatório" }),
   code: z
     .string({ required_error: "Campo obrigatório" })
-    .length(6, { message: "Insira um código válido" }),
+    .min(6, { message: "Insira um código válido" }),
 });
 
 type FormType = z.infer<typeof formSchema>;
@@ -23,6 +23,7 @@ type FormType = z.infer<typeof formSchema>;
 export function Login() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
+  const [loginError, setLoginError] = useState<string>();
 
   const {
     register,
@@ -35,29 +36,31 @@ export function Login() {
   const onSubmit = async (data: FormType) => {
     setIsLoading(true);
 
-    const response = await fetch("/api/login", {
-      body: JSON.stringify(data),
-      method: "POST",
+    const { error } = await supabase.auth.signInWithPassword({
+      email: `${data.login}@albusdente.com.br`,
+      password: data.code,
     });
 
-    const { professional_id } = await response.json();
-
-    if (response.status === 200) {
-      await supabase.auth.signInAnonymously({
-        options: {
-          data: {
-            professional_id,
-          },
-        },
-      });
+    if (error) {
+      setIsLoading(false);
+      return setLoginError("Usuário ou senha estão errados");
     }
+
     router.push("/");
 
     setIsLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6 p-5 w-full md:max-w-[600px] mx-auto"
+    >
+      {loginError && (
+        <div className="p-4 border rounded-lg text-red-800 border-red-500 bg-red-50 flex items-center justify-center">
+          {loginError}
+        </div>
+      )}
       <div className="space-y-2">
         <Label
           htmlFor="email"

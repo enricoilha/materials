@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { Row, Table } from "@tanstack/react-table";
-import { Material } from "@/app/materiais/columns";
+import { Material } from "@/app/dashboard/materiais/columns";
 import { supabase } from "@/lib/supabase";
 import { formatToReais, parseFromReais } from "@/lib/utils";
 

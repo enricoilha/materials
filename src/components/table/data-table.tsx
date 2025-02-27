@@ -24,8 +24,10 @@ import {
 } from "@/components/ui/table";
 
 import { type Lista, columns } from "./columns";
+import { useRouter } from "next/navigation";
 
 export function DataTable({ data }: { data: Lista[] }) {
+  const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -80,8 +82,8 @@ export function DataTable({ data }: { data: Lista[] }) {
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border p-6 h-[68vh]">
+        <Table className="">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -104,6 +106,8 @@ export function DataTable({ data }: { data: Lista[] }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="cursor-pointer h-14"
+                  onClick={() => router.push(`/dashboard/${row.original.id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
