@@ -200,6 +200,51 @@ export type Database = {
           },
         ]
       }
+      temp_profissionais_csv: {
+        Row: {
+          clinica: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          funcao: string | null
+          id: string | null
+          id_clinica: number | null
+          login: string | null
+          nome: string | null
+          senha: string | null
+          sindicato: string | null
+          telefone: string | null
+        }
+        Insert: {
+          clinica?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          funcao?: string | null
+          id?: string | null
+          id_clinica?: number | null
+          login?: string | null
+          nome?: string | null
+          senha?: string | null
+          sindicato?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          clinica?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          funcao?: string | null
+          id?: string | null
+          id_clinica?: number | null
+          login?: string | null
+          nome?: string | null
+          senha?: string | null
+          sindicato?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -17,6 +17,15 @@ export async function middleware(req: NextRequest) {
     "/dashboard/materials",
     "/dasbhoard/[id]",
   ];
+
+  const isAdminRoute = req.nextUrl.pathname.startsWith("/dashboard");
+
+  if (isAdminRoute) {
+    if (!session || session.user.user_metadata.role !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
   const isProtectedRoute = protectedRoutes.some((route) =>
     req.nextUrl.pathname.startsWith(route)
   );
@@ -35,5 +44,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/dashboard/:path*",
+  ],
 };

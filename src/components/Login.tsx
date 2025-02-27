@@ -33,17 +33,23 @@ export function Login() {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: FormType) => {
+  const onSubmit = async ({ code, login }: FormType) => {
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: `${data.login}@albusdente.com.br`,
-      password: data.code,
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.signInWithPassword({
+      email: `${login}@albusdente.com.br`,
+      password: code,
     });
 
     if (error) {
       setIsLoading(false);
       return setLoginError("Usuário ou senha estão errados");
+    }
+    if (user?.user_metadata.role === "admin") {
+      return router.push("/dashboard");
     }
 
     router.push("/");

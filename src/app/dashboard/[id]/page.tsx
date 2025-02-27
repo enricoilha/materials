@@ -65,7 +65,7 @@ export default function ListaPage() {
     },
   });
   return (
-    <>
+    <div className="flex flex-col md:p-10 w-full max-w-[1200px]">
       <ButtonWithTooltip tooltipText="Voltar">
         <div onClick={() => router.back()} className="px-4 py-2">
           <ArrowLeft size={20} />
@@ -108,6 +108,6 @@ export default function ListaPage() {
           </>
         )}
       </div>
-    </>
+    </div>
   );
 }

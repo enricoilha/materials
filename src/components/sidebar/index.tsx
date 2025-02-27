@@ -1,4 +1,5 @@
-import { Home, Inbox } from "lucide-react";
+"use client";
+import { Home, Inbox, LogOut, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,6 +10,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../ui/sidebar";
+import { Button } from "../ui/button";
+import { supabase } from "@/lib/supabase";
 
 const items = [
   {
@@ -18,9 +21,10 @@ const items = [
   },
   {
     title: "Materiais",
-    url: "/materiais",
+    url: "/dashboard/materiais",
     icon: Inbox,
   },
+  { title: "Profissionais", url: "/dashboard/profissionais", icon: User },
 ];
 
 export const AppSidebar = () => {
@@ -47,7 +51,11 @@ export const AppSidebar = () => {
         <SidebarGroup />
         <SidebarGroup />
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <Button onClick={() => supabase.auth.signOut()} variant={"outline"}>
+          <LogOut /> Sair
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 };
