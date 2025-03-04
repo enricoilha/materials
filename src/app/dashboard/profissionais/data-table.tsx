@@ -24,8 +24,10 @@ import {
 } from "@/components/ui/table";
 
 import { type Material, columns } from "./columns";
+import { useRouter } from "next/navigation";
 
 export function DataTable({ data }: { data: Material[] }) {
+  const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -36,7 +38,7 @@ export function DataTable({ data }: { data: Material[] }) {
   const fuse = React.useMemo(
     () =>
       new Fuse(data, {
-        keys: ["materiais"],
+        keys: ["nome"],
         threshold: 0.3,
         includeScore: true,
       }),
@@ -74,7 +76,7 @@ export function DataTable({ data }: { data: Material[] }) {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filtrar materiais..."
+          placeholder="Filtrar profissional..."
           value={filterValue}
           onChange={(event) => setFilterValue(event.target.value)}
           className="max-w-sm"
@@ -104,6 +106,10 @@ export function DataTable({ data }: { data: Material[] }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() =>
+                    router.push(`/dashboard/profissionais/${row.original.id}`)
+                  }
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell className="" key={cell.id}>

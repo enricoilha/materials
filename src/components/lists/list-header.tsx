@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "../../../database.types";
 import { capitalizeWords } from "@/lib/utils";
+import Link from "next/link";
 
 type ListHeaderProps = {
   list: Tables<"listas"> & {
@@ -78,7 +79,11 @@ export default function ListHeader({
           <h3 className="text-sm font-medium text-gray-500">Profissional</h3>
           {professional ? (
             <div className="mt-1">
-              <p className="font-medium">{professional.nome}</p>
+              <Link href={`/dashboard/profissionais/${professional.id}`}>
+                <p className="font-medium hover:underline hover:text-blue-600">
+                  {professional.nome}
+                </p>
+              </Link>
               <p className="text-gray-500 text-sm">{professional.funcao}</p>
             </div>
           ) : (

@@ -25,7 +25,7 @@ export default function FormLayout({ children }: { children: ReactNode }) {
     check();
   }, []);
   return (
-    <div className="flex-1">
+    <div className="flex-1 ">
       <Head>
         <meta
           name="viewport"

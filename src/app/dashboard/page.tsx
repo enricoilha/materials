@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <>
-      <main className="w-full max-w-[1200px] mx-auto">
+      <main className="w-full max-w-[1200px] mx-auto ">
         <PageHeader
           title="Listas"
           description="Gerencie e acompanhe listas de materiais com profissionais, clínicas e itens de inventário associados."

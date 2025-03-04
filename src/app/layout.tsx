@@ -2,6 +2,8 @@ import { Geist_Mono, Inter } from "next/font/google";
 import AuthListener from "@/components/AuthListener";
 import "./globals.css";
 import { QueryClientProviderComponent } from "@/providers/QueryClient";
+import { AppSidebar } from "@/components/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,10 +23,13 @@ export default async function RootLayout({
   return (
     <html lang="pt-br">
       <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
-        <QueryClientProviderComponent>
-          <AuthListener />
-          <div className="md:p-10 w-full">{children}</div>
-        </QueryClientProviderComponent>
+        <SidebarProvider>
+          <QueryClientProviderComponent>
+            <AuthListener />
+            <AppSidebar />
+            <div className="md:p-10 w-full">{children}</div>
+          </QueryClientProviderComponent>
+        </SidebarProvider>
       </body>
     </html>
   );
