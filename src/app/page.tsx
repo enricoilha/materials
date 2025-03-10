@@ -32,11 +32,9 @@ export default function HomePage() {
       } = await supabase.auth.getUser();
       const { data } = await supabase
         .from("listas")
-        .select("id, created_at, month")
-        .match({
-          status: "not_filled",
-          profissional_id: user?.user_metadata.professional_id,
-        });
+        .select("id, created_at, month, profissional_id!inner(user_id)")
+        .filter("profissional_id.user_id", "eq", user?.id)
+        .filter("status", "eq", "not_filled");
 
       if (!data) {
         throw new Error("No data found");
@@ -63,6 +61,8 @@ export default function HomePage() {
 
     check();
   }, []);
+
+  console.log(data);
 
   return (
     <div className="flex flex-col items-center md:max-w-[600px] md:mx-auto">

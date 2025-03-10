@@ -7,6 +7,7 @@ export const materialSchema = z.object({
       quantity: z
         .number({ required_error: "Campo obrigatório" })
         .min(1, "Insira um número válido"),
+      preco: z.number({ required_error: "Campo obrigatório" }),
     })
   ),
 });

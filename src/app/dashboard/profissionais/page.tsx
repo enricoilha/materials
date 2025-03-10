@@ -21,7 +21,7 @@ export default function ProfissionaisPage() {
   });
   return (
     <>
-      <main className="w-full max-w-[1200px] mx-auto">
+      <main className="w-full max-w-[1200px]">
         <PageHeader
           title="Profissionais"
           description="Consulte e gerencie informações dos profissionais cadastrados no sistema"

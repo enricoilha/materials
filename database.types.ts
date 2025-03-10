@@ -37,6 +37,7 @@ export type Database = {
           lista_id: string
           material_id: string
           observacoes: string | null
+          preco: number
           quantidade: number
         }
         Insert: {
@@ -45,6 +46,7 @@ export type Database = {
           lista_id: string
           material_id: string
           observacoes?: string | null
+          preco: number
           quantidade: number
         }
         Update: {
@@ -53,6 +55,7 @@ export type Database = {
           lista_id?: string
           material_id?: string
           observacoes?: string | null
+          preco?: number
           quantidade?: number
         }
         Relationships: [
@@ -64,7 +67,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_material"
+            foreignKeyName: "lista_materiais_itens_material_id_fkey"
             columns: ["material_id"]
             isOneToOne: false
             referencedRelation: "materiais"
@@ -161,6 +164,7 @@ export type Database = {
           senha: string | null
           sindicato: string | null
           telefone: string | null
+          user_id: string | null
         }
         Insert: {
           clinica?: string | null
@@ -175,6 +179,7 @@ export type Database = {
           senha?: string | null
           sindicato?: string | null
           telefone?: string | null
+          user_id?: string | null
         }
         Update: {
           clinica?: string | null
@@ -189,6 +194,7 @@ export type Database = {
           senha?: string | null
           sindicato?: string | null
           telefone?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {

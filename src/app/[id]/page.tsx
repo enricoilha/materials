@@ -71,6 +71,7 @@ export default function FormPage() {
       lista_id: id as string,
       quantidade: item.quantity,
       material_id: item.material_id,
+      preco: item.preco,
     }));
 
     if (!parsed) {
@@ -132,7 +133,11 @@ export default function FormPage() {
                           type="button"
                           onClick={() =>
                             append(
-                              { material_id: undefined!, quantity: 1 },
+                              {
+                                material_id: undefined!,
+                                quantity: 1,
+                                preco: 0,
+                              },
                               { shouldFocus: false }
                             )
                           }

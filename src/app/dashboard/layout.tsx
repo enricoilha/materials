@@ -18,6 +18,7 @@ export default function FormLayout({ children }: { children: ReactNode }) {
       }
 
       if (session.user.user_metadata.role !== "admin") {
+        console.log("not admin");
         redirect("/");
       }
     };
@@ -25,17 +26,14 @@ export default function FormLayout({ children }: { children: ReactNode }) {
     check();
   }, []);
   return (
-    <div className="flex-1 ">
+    <div className="md:p-10 ">
       <Head>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1"
         />
       </Head>
-      <SidebarProvider>
-        <AppSidebar />
-        {children}
-      </SidebarProvider>
+      {children}
     </div>
   );
 }

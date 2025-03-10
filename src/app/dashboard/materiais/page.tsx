@@ -18,7 +18,7 @@ export default async function MaterialsPage() {
   const data = await getData();
 
   return (
-    <div className="container max-w-[1200px] mx-auto ">
+    <div className="container max-w-[1200px] ">
       <PageHeader
         title="Materiais"
         description="Visualize e altere os preços dos materiais"

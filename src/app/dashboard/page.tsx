@@ -6,13 +6,11 @@ import { DataTable } from "@/components/table/data-table";
 import { supabase } from "@/lib/supabase";
 import { useDateRangeStore } from "@/stores/date";
 import { useQuery } from "@tanstack/react-query";
-import { addDays } from "date-fns";
-import { useEffect, useState } from "react";
-import { DateRange } from "react-day-picker";
+import { useEffect } from "react";
 
 export default function Home() {
   const { dateRange, setDateRange } = useDateRangeStore();
-  const { data, isError, isLoading, refetch } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ["table-data"],
     queryFn: async () => {
       if (dateRange.from === undefined || !dateRange.to === undefined)
@@ -37,11 +35,9 @@ export default function Home() {
     refetch();
   }, [dateRange]);
 
-  console.log(isError);
-
   return (
     <>
-      <main className="w-full max-w-[1200px] mx-auto ">
+      <main className="w-full max-w-[1200px]">
         <PageHeader
           title="Listas"
           description="Gerencie e acompanhe listas de materiais com profissionais, clínicas e itens de inventário associados."
