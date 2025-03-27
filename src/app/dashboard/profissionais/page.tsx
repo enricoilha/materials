@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export default function ProfissionaisPage() {
-  const { data } = useQuery({
+  const { data, error } = useQuery({
     queryKey: ["profissionais-page"],
     queryFn: async () => {
       const { data: professionalsData, error: professionalsError } =
@@ -19,6 +19,11 @@ export default function ProfissionaisPage() {
       return professionalsData;
     },
   });
+
+  if (error) {
+    console.error(error);
+  }
+
   return (
     <>
       <main className="w-full max-w-[1200px]">

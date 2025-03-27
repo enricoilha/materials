@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Combobox } from "./combobox";
 import { materialSchema } from "@/schemas/materialForm";
@@ -18,9 +18,12 @@ interface MaterialItemProps {
 type FormType = z.infer<typeof materialSchema>;
 
 export const MaterialItem = ({ index, remove, options }: MaterialItemProps) => {
+  const [previousItemId, setPreviousItemId] = useState<string | null>(null);
   const {
     formState: { errors },
     control,
+    watch,
+    setValue,
   } = useFormContext<FormType>();
 
   const updateItem = usePriceStore((state) => state.updateItem);
@@ -37,14 +40,21 @@ export const MaterialItem = ({ index, remove, options }: MaterialItemProps) => {
     defaultValue: 1,
   });
 
+  const preco = useWatch({
+    control,
+    name: `materials.${index}.preco`,
+  });
+
   const selectedMaterial = options.find((opt) => opt.value === materialId);
 
   useEffect(() => {
     if (materialId && selectedMaterial) {
-      const precoInCents = Math.round(selectedMaterial.preco * 100);
-      updateItem(materialId, precoInCents, quantity || 1);
+      const precoInCents = selectedMaterial.preco;
+      setValue(`materials.${index}.preco`, precoInCents);
+      updateItem(materialId, precoInCents, quantity || 1, previousItemId);
+      setPreviousItemId(materialId);
     }
-  }, [materialId, quantity, selectedMaterial, updateItem]);
+  }, [materialId, quantity, selectedMaterial, updateItem, setValue, index]);
 
   const handleRemove = () => {
     if (materialId) {
@@ -89,13 +99,21 @@ export const MaterialItem = ({ index, remove, options }: MaterialItemProps) => {
         />
       </div>
 
-      {selectedMaterial && (
-        <div className="text-right text-sm text-muted-foreground">
-          Preço: R${" "}
-          {((selectedMaterial.preco * quantity) / 100).toLocaleString("pt-BR", {
-            minimumFractionDigits: 2,
-          })}
-        </div>
+      {preco && (
+        <>
+          <div className="text-right text-sm text-muted-foreground">
+            Preço: R${" "}
+            {(preco / 100).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+            })}
+          </div>
+          <div className="text-right text-sm text-muted-foreground">
+            Total: R${" "}
+            {((preco / 100) * quantity).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+            })}
+          </div>
+        </>
       )}
     </motion.div>
   );

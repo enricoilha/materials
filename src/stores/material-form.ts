@@ -1,3 +1,4 @@
+import { formatToReais, parseFromReais } from "@/lib/utils";
 import { create } from "zustand";
 
 interface MaterialItem {
@@ -8,68 +9,104 @@ interface MaterialItem {
 
 interface PriceState {
   totalPrice: number;
-  items: Record<string, MaterialItem>;
-  updateItem: (id: string, preco: number, quantity: number) => void;
+  items: MaterialItem[];
+  updateItem: (
+    id: string,
+    preco: number,
+    quantity: number,
+    previousItemId: string | null
+  ) => void;
   removeItem: (id: string) => void;
   getFormattedTotal: () => string;
   resetStore: () => void;
+  logState: () => void;
 }
 
-export const usePriceStore = create<PriceState>((set, get) => ({
-  totalPrice: 0,
-  items: {},
+export const usePriceStore = create<PriceState>((set, get) => {
+  const calculateTotalPrice = (items: MaterialItem[]): number => {
+    return items.reduce((total, item) => item.preco * item.quantity + total, 0);
+  };
 
-  updateItem: (id: string, preco: number, quantity: number) => {
-    set((state) => {
-      const newItems = { ...state.items };
-      let newTotalPrice = state.totalPrice;
+  return {
+    totalPrice: 0,
+    items: [],
 
-      if (newItems[id]) {
-        newTotalPrice -= (newItems[id].preco / 100) * newItems[id].quantity;
-      }
+    updateItem: (
+      id: string,
+      preco: number,
+      quantity: number,
+      previousItemId: string | null
+    ) => {
+      set((state) => {
+        const newItems = [...state.items];
 
-      newTotalPrice += (preco / 100) * quantity;
+        const existingItemIndex = newItems.findIndex(
+          (item) => item.id === previousItemId
+        );
 
-      newItems[id] = { id, preco, quantity };
+        if (existingItemIndex >= 0) {
+          newItems[existingItemIndex] = { id, preco, quantity };
+        } else {
+          newItems.push({ id, preco, quantity });
+        }
 
-      return {
-        items: newItems,
-        totalPrice: newTotalPrice,
-      };
-    });
-  },
+        const newTotalPrice = calculateTotalPrice(newItems);
+        console.log(`[Store] New total price: ${newTotalPrice}`);
+        console.log(newItems);
 
-  removeItem: (id: string) => {
-    set((state) => {
-      const newItems = { ...state.items };
+        return {
+          items: newItems,
+          totalPrice: newTotalPrice,
+        };
+      });
+    },
 
-      if (!newItems[id]) return state;
+    removeItem: (id: string) => {
+      set((state) => {
+        console.log(`[Store] Removing item ${id}`);
 
-      const newTotalPrice =
-        state.totalPrice - (newItems[id].preco / 100) * newItems[id].quantity;
+        const itemExists = state.items.some((item) => item.id === id);
 
-      delete newItems[id];
+        if (!itemExists) {
+          console.log(`[Store] Item ${id} not found, no changes made`);
+          return state;
+        }
 
-      return {
-        items: newItems,
-        totalPrice: newTotalPrice,
-      };
-    });
-  },
+        const newItems = state.items.filter((item) => item.id !== id);
+        console.log(
+          `[Store] Removed item ${id}, new items count: ${newItems.length}`
+        );
 
-  getFormattedTotal: () => {
-    const { totalPrice } = get();
+        const newTotalPrice = calculateTotalPrice(newItems);
+        console.log(`[Store] New total price after removal: ${newTotalPrice}`);
 
-    return (totalPrice / 100).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
-  },
+        return {
+          items: newItems,
+          totalPrice: newTotalPrice,
+        };
+      });
+    },
 
-  resetStore: () => {
-    set({
-      totalPrice: 0,
-      items: {},
-    });
-  },
-}));
+    getFormattedTotal: () => {
+      const { totalPrice } = get();
+      return formatToReais(totalPrice);
+    },
+
+    resetStore: () => {
+      console.log(`[Store] Resetting store`);
+      set({
+        totalPrice: 0,
+        items: [],
+      });
+    },
+
+    logState: () => {
+      const state = get();
+      console.log("Current store state:", {
+        items: state.items,
+        totalPrice: state.totalPrice,
+        formattedTotal: state.getFormattedTotal(),
+      });
+    },
+  };
+});

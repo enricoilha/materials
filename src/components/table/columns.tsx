@@ -1,18 +1,8 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
-import { capitalizeWords } from "@/lib/utils";
+import { capitalizeWords, formatToReais } from "@/lib/utils";
 
 export type Lista = {
   id: string;
@@ -25,7 +15,10 @@ export type Lista = {
     sindicato: string;
   };
   status: "filled" | "not_filled";
+  filled_at: string;
+  preco_total: number;
   created_at: string;
+
   lista_materiais_itens?: {
     material_id: {
       materiais: string;
@@ -58,7 +51,7 @@ export const columns: ColumnDef<Lista>[] = [
       const status = row.getValue("status") as string;
       return (
         <div
-          className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
+          className={`inline-flex w-32 justify-center items-center rounded-md px-3 py-1 text-xs font-medium ${
             status === "filled"
               ? "bg-green-100 text-green-800"
               : status === "not_filled"
@@ -86,11 +79,27 @@ export const columns: ColumnDef<Lista>[] = [
     ),
   },
   {
+    accessorKey: "preco_total",
+    header: "Preço Total",
+    cell: ({ row }) => (
+      <div className="w-44">{formatToReais(row.getValue("preco_total"))}</div>
+    ),
+  },
+  {
     accessorKey: "created_at",
     header: "Data de Criação",
     cell: ({ row }) => (
       <div className="w-44">
-        {format(new Date(row.getValue("created_at")), "dd/MM/yyyy HH:mm")}
+        {format(new Date(row.getValue("created_at")), "dd/MM/yyyy")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "filled_at",
+    header: "Data de Preenchimento",
+    cell: ({ row }) => (
+      <div className="w-44">
+        {format(new Date(row.getValue("filled_at")), "dd/MM/yyyy")}
       </div>
     ),
   },

@@ -62,8 +62,6 @@ export default function HomePage() {
     check();
   }, []);
 
-  console.log(data);
-
   return (
     <div className="flex flex-col items-center md:max-w-[600px] md:mx-auto">
       <Header />

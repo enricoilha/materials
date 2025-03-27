@@ -16,14 +16,6 @@ export default function ListSummary({
   status,
   totalPrice,
 }: ListSummaryProps) {
-  // Calculate the total from items if total price is not provided
-  const calculatedTotal = items.reduce((sum, item) => {
-    const itemPrice = (item.materiais?.preco || 0) * item.quantidade;
-    return sum + itemPrice;
-  }, 0);
-
-  const total = totalPrice !== null ? totalPrice : calculatedTotal;
-
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex justify-between items-center mb-4">
@@ -47,7 +39,7 @@ export default function ListSummary({
         <div className="flex justify-between items-center">
           <span className="text-base font-medium text-gray-900">Total</span>
           <span className="text-lg font-bold text-gray-900">
-            {formatToReais(total)}
+            {formatToReais(totalPrice!) || ""}
           </span>
         </div>
       </div>

@@ -133,6 +133,7 @@ export function Combobox({
                           field.onChange(
                             currentValue === field.value ? "" : currentValue
                           );
+                          console.log(field.value);
                           setOpen(false);
                           setSearchValue("");
                         }}

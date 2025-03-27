@@ -5,6 +5,7 @@ import { TotalPrice } from "@/components/form/TotalPrice";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { parseFromReais } from "@/lib/utils";
 import { materialSchema } from "@/schemas/materialForm";
 import { usePriceStore } from "@/stores/material-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,12 +68,14 @@ export default function FormPage() {
     if (!id) {
       return console.log("Id undefined");
     }
-    const parsed = data.materials.map((item) => ({
-      lista_id: id as string,
-      quantidade: item.quantity,
-      material_id: item.material_id,
-      preco: item.preco,
-    }));
+    const parsed = data.materials.map((item) => {
+      return {
+        lista_id: id as string,
+        quantidade: item.quantity,
+        material_id: item.material_id,
+        preco: item.preco,
+      };
+    });
 
     if (!parsed) {
       return console.log("Error parsing data");
@@ -85,7 +88,7 @@ export default function FormPage() {
       .from("listas")
       .update({
         status: "filled",
-        filled_at: new Date(),
+        filled_at: new Date().toISOString(),
         preco_total: totalPrice,
       })
       .eq("id", id as string);
@@ -148,7 +151,10 @@ export default function FormPage() {
                           <Plus />
                         </Button>
                         <div className="bg-border w-full h-[1px] my-4 mx-5 shrink-0" />
-                        <Button className="w-full h-11 mt-6 bg-black font-medium">
+                        <Button
+                          type="submit"
+                          className="w-full h-11 mt-6 bg-black font-medium"
+                        >
                           Finalizar
                         </Button>
                       </div>

@@ -10,8 +10,8 @@ import { capitalizeWords } from "@/lib/utils";
 export type Material = {
   id: string;
   materiais: string;
-  tipo: string;
-  preco: number | null;
+  tipo: string | null;
+  preco: number;
 };
 
 export const columns: ColumnDef<Material>[] = [

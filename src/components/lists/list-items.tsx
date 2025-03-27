@@ -51,7 +51,7 @@ export default function ListItems({ items }: ListItemsProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {items.map((item) => {
               const material = item.materiais;
-              const subtotal = (material?.preco || 0) * item.quantidade;
+              const subtotal = (item.preco || 0) * item.quantidade;
 
               return (
                 <tr key={item.id}>
@@ -66,7 +66,7 @@ export default function ListItems({ items }: ListItemsProps) {
                     {item.quantidade}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatToReais(material?.preco || 0)}
+                    {formatToReais(item?.preco || 0)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatToReais(subtotal)}
