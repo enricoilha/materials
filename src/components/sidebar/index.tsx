@@ -1,5 +1,5 @@
 "use client";
-import { Home, Inbox, LogOut, User } from "lucide-react";
+import { Calendar, Home, Inbox, LogOut, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,34 +12,50 @@ import {
 } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { supabase } from "@/lib/supabase";
+import { usePathname } from "next/navigation";
 
 const items = [
   {
-    title: "Início",
+    title: "Visão Geral",
     url: "/dashboard",
     icon: Home,
   },
   {
     title: "Materiais",
-    url: "/dashboard/materiais",
+    url: "/dashboard/materials-overview",
     icon: Inbox,
   },
-  { title: "Profissionais", url: "/dashboard/profissionais", icon: User },
+  {
+    title: "Profissionais",
+    url: "/dashboard/professional-history",
+    icon: User,
+  },
+  {
+    title: "Relatório por Período",
+    url: "/dashboard/monthly-report",
+    icon: Calendar,
+  },
 ];
-
 export const AppSidebar = () => {
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/dashboard");
   return (
-    <Sidebar className="hidden xl:inline">
-      <SidebarHeader className="p-3">
+    <Sidebar className={`hidden ${isDashboard ? "xl:inline" : ""}`}>
+      <SidebarHeader className="p-5">
         <div className="font-semibold text-xl tracking-wide my-10 flex items-center ">
           Materiais
         </div>
       </SidebarHeader>
-      <SidebarContent className="p-1">
+      <SidebarContent className="p-3">
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton
+                asChild
+                className={`${
+                  pathname === item.url ? "bg-gray-100 font-semibold" : ""
+                }`}
+              >
                 <a href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>

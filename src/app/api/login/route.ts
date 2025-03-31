@@ -5,24 +5,15 @@ export async function POST(request: Request) {
 
   const supabase = await createClientServer();
 
-  const { data, error } = await supabase
-    .from("profissionais")
-    .select("id, nome")
-    .eq("login", login)
-    .single();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.signInWithPassword({
+    email: `${login}@albusdente.com.br`,
+    password: code,
+  });
 
-  if (!data || error) {
-    return Response.json({
-      status: 400,
-      message: "Código de usuário ou senha estão errados",
-    });
-  }
-
-  const firstLetter = data?.nome.slice(0, 1);
-  const id_numbers = data?.id.slice(0, 5);
-  const password = `${firstLetter}${id_numbers}`;
-
-  if (code !== password) {
+  if (!user || error) {
     return Response.json({
       status: 400,
       message: "Código de usuário ou senha estão errados",
@@ -32,6 +23,7 @@ export async function POST(request: Request) {
   return Response.json({
     status: 200,
     message: "ok",
-    professional_id: data.id,
+    professional_id: user.id,
+    role: user.user_metadata.role,
   });
 }

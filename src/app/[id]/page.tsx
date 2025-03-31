@@ -10,9 +10,9 @@ import { materialSchema } from "@/schemas/materialForm";
 import { usePriceStore } from "@/stores/material-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Loader, Plus } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -21,7 +21,8 @@ type FormType = z.infer<typeof materialSchema>;
 export default function FormPage() {
   const { id } = useParams();
   const { resetStore, totalPrice } = usePriceStore((state) => state);
-  const { data, isLoading, error } = useQuery({
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["form-select"],
     queryFn: async () => {
       const { data: checkData, error: checkError } = await supabase
@@ -32,7 +33,7 @@ export default function FormPage() {
 
       if (checkError) throw new Error("Não existe uma lista válida");
       if (checkData.status === "filled") {
-        throw new Error("Lista já preenchida");
+        return { status: 201, message: "Lista já preenchida" };
       }
 
       const { data, error } = await supabase
@@ -65,7 +66,9 @@ export default function FormPage() {
   });
 
   async function onSubmit(data: FormType) {
+    setIsSubmitting(true);
     if (!id) {
+      setIsSubmitting(false);
       return console.log("Id undefined");
     }
     const parsed = data.materials.map((item) => {
@@ -78,6 +81,7 @@ export default function FormPage() {
     });
 
     if (!parsed) {
+      setIsSubmitting(false);
       return console.log("Error parsing data");
     }
     const { error: err } = await supabase
@@ -93,7 +97,14 @@ export default function FormPage() {
       })
       .eq("id", id as string);
 
-    return console.log(err, updateError);
+    if (updateError) {
+      setIsSubmitting(false);
+      throw new Error(updateError.message);
+    }
+
+    refetch();
+    setIsSubmitting(false);
+    return;
   }
 
   useEffect(() => {
@@ -108,8 +119,8 @@ export default function FormPage() {
           <div>Carregando</div>
         ) : (
           <>
-            {!error ? (
-              data && (
+            {!error &&
+              (Array.isArray(data) ? (
                 <>
                   <div className="w-full p-4">
                     <TotalPrice />
@@ -153,20 +164,24 @@ export default function FormPage() {
                         <div className="bg-border w-full h-[1px] my-4 mx-5 shrink-0" />
                         <Button
                           type="submit"
+                          disabled={isSubmitting}
                           className="w-full h-11 mt-6 bg-black font-medium"
                         >
-                          Finalizar
+                          {isSubmitting ? (
+                            <Loader className="animate-spin" />
+                          ) : (
+                            "Finalizar"
+                          )}
                         </Button>
                       </div>
                     </form>
                   </FormProvider>
                 </>
-              )
-            ) : (
-              <div className="text-center p-4 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-500">
-                {error.message}
-              </div>
-            )}
+              ) : (
+                <div className="text-center p-4 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-500">
+                  {data?.message}
+                </div>
+              ))}
           </>
         )}
       </main>

@@ -50,9 +50,8 @@ export default function HomePage() {
 
   useEffect(() => {
     const check = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const response = await fetch("/api/session");
+      const { session } = await response.json();
 
       if (!session) {
         redirect("/auth/login");

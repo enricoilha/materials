@@ -1,39 +1,32 @@
-"use client";
 import { AppSidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { supabase } from "@/lib/supabase";
+import { createClientServer } from "@/lib/server";
 import Head from "next/head";
 import { redirect } from "next/navigation";
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
+import { Header } from "@/components/Header";
 
-export default function FormLayout({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    const check = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createClientServer();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-      if (!session) {
-        redirect("/auth/login");
-      }
+  if (!session) {
+    redirect("/auth/login");
+  }
 
-      if (session.user.user_metadata.role !== "admin") {
-        console.log("not admin");
-        redirect("/");
-      }
-    };
+  if (session.user.user_metadata.role !== "admin") {
+    redirect("/");
+  }
 
-    check();
-  }, []);
   return (
-    <div className="md:p-10 ">
-      <Head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
-        />
-      </Head>
-      {children}
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

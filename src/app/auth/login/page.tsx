@@ -15,6 +15,9 @@ export default function LoginPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (user?.user_metadata.role === "admin") {
+        router.push("/dashboard");
+      }
       if (user) router.push("/");
     };
     checkSession();

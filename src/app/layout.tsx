@@ -27,6 +27,7 @@ export default async function RootLayout({
           <QueryClientProviderComponent>
             <AuthListener />
             <AppSidebar />
+
             <div className="md:py-10 w-full">{children}</div>
           </QueryClientProviderComponent>
         </SidebarProvider>

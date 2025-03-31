@@ -1,60 +1,189 @@
 "use client";
 
-import { DatePickerRange } from "@/components/DatePickerRange";
-import { PageHeader } from "@/components/PageHeader";
-import { DataTable } from "@/components/table/data-table";
-import { TableSummary } from "@/components/TableSummary";
-import { supabase } from "@/lib/supabase";
-import { useDateRangeStore } from "@/stores/date";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-export default function Home() {
-  const { dateRange, setDateRange } = useDateRangeStore();
-  const { data, refetch } = useQuery({
-    queryKey: ["table-data"],
-    queryFn: async () => {
-      if (dateRange.from === undefined || !dateRange.to === undefined)
-        throw new Error("There is no date selected");
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MonthlyTrends } from "@/components/dashboard/monthly-trends";
+import { ClinicDistribution } from "@/components/dashboard/clinic-distribution";
+import { RecentLists } from "@/components/dashboard/recent-lists";
+import { MaterialsOverview } from "@/components/dashboard/materials-overview";
+import { ProfessionalStats } from "@/components/dashboard/professional-stats";
 
-      const { data: listas, error } = await supabase
-        .from("listas")
-        .select(
-          `id, descricao, status, created_at, profissional_id(nome, email), clinica_id(*), preco_total, filled_at,lista_materiais_itens(material_id(materiais), quantidade)`
-        )
-        .gte("created_at", new Date(dateRange?.from).toISOString())
-        .lte("created_at", new Date(dateRange?.to).toISOString())
-        .order("status", "filled");
-
-      if (error) throw error;
-
-      return listas;
-    },
+export default function DashboardPage() {
+  const [stats, setStats] = useState<any>({
+    profissionaisAtivos: 0,
+    totalProfissionais: 0,
+    totalMateriais: 0,
+    valorTotal: 0,
+    crescimento: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    refetch();
-  }, [dateRange]);
+    async function fetchStats() {
+      try {
+        const response = await fetch("/api/dashboard/stats");
+        if (!response.ok) {
+          throw new Error("Erro ao buscar estatísticas");
+        }
+        const data = await response.json();
+        setStats(data);
+      } catch (error) {
+        console.error("Erro:", error);
+        setError("Não foi possível carregar as estatísticas");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
 
   return (
-    <>
-      <main className="w-full max-w-[1500px]">
-        <PageHeader
-          title="Listas"
-          description="Gerencie e acompanhe listas de materiais com profissionais, clínicas e itens de inventário associados."
-        />
-
-        {data && (
-          <div className="mt-10 w-full">
-            <p className="font-medium text-sm mb-1">Filtrar Data:</p>
-            <TableSummary data={data} dateRange={dateRange} />
-
-            <DatePickerRange date={dateRange} setDate={setDateRange} />
-
-            <DataTable data={data} />
+    <div className="flex min-h-screen w-full flex-col">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Dashboard de Relatórios
+          </h1>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" className="mr-2">
+              <Link href="/dashboard/monthly-report">
+                Relatório por Período
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="mr-2">
+              <Link href="/dashboard/professional-history">
+                Histórico de Profissionais
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/reports/export">Exportar Dados</Link>
+            </Button>
           </div>
-        )}
+        </div>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {isLoading ? (
+                <>
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-[100px]" />
+                  ))}
+                </>
+              ) : (
+                <>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Profissionais com Listas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {stats.profissionaisAtivos}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalProfissionais > 0
+                          ? `${Math.round(
+                              (stats.profissionaisAtivos /
+                                stats.totalProfissionais) *
+                                100
+                            )}% do total`
+                          : "0% do total"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Profissionais Ativos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {stats.totalProfissionais}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Total de profissionais cadastrados
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Materiais Utilizados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {stats.totalMateriais.toLocaleString("pt-BR")}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Total de itens em todas as listas
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Valor Total
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        R${" "}
+                        {(stats.valorTotal / 100).toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.crescimento > 0
+                          ? `+${stats.crescimento}% em relação ao mês anterior`
+                          : `${stats.crescimento}% em relação ao mês anterior`}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Listas Recentes</CardTitle>
+                  <CardDescription>
+                    Últimas atividades nas listas de materiais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentLists />
+                </CardContent>
+              </Card>
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Visão Geral de Materiais</CardTitle>
+                  <CardDescription>Materiais mais utilizados</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <MaterialsOverview />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
-    </>
+    </div>
   );
 }

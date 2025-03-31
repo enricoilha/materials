@@ -34,21 +34,23 @@ export function Login() {
   });
 
   const onSubmit = async ({ code, login }: FormType) => {
+   
     setIsLoading(true);
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.signInWithPassword({
-      email: `${login}@albusdente.com.br`,
-      password: code,
+    const response = await fetch("/api/login", {
+      method: "POST",
+      body: JSON.stringify({ code, login }),
     });
-
-    if (error) {
+    const { status, role } = await response.json();
+    if (status !== 200) {
       setIsLoading(false);
       return setLoginError("Usuário ou senha estão errados");
     }
-    if (user?.user_metadata.role === "admin") {
+
+    console.log(role);
+
+    if (role === "admin") {
+      console.log(role);
       return router.push("/dashboard");
     }
 
