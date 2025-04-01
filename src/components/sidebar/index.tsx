@@ -1,10 +1,12 @@
 "use client";
-import { Calendar, Home, Inbox, LogOut, User } from "lucide-react";
+import { Calendar, DollarSign, Home, Inbox, LogOut, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -36,6 +38,14 @@ const items = [
     icon: Calendar,
   },
 ];
+
+const items_managment = [
+  {
+    title: "Gerenciar Preços",
+    url: "/dashboard/materiais",
+    icon: DollarSign,
+  },
+];
 export const AppSidebar = () => {
   const pathname = usePathname();
   const isDashboard = pathname.startsWith("/dashboard");
@@ -48,24 +58,39 @@ export const AppSidebar = () => {
       </SidebarHeader>
       <SidebarContent className="p-3">
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                className={`${
-                  pathname === item.url ? "bg-gray-100 font-semibold" : ""
-                }`}
-              >
+          <SidebarGroup>
+            <SidebarGroupLabel>Relatórios</SidebarGroupLabel>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  className={`${
+                    pathname === item.url ? "bg-gray-100 font-semibold" : ""
+                  }`}
+                >
+                  <a href={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarGroup>
+        </SidebarMenu>
+        <SidebarGroup>
+          <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            {items_managment.map((item) => (
+              <SidebarMenuButton asChild key={item.title}>
                 <a href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-        <SidebarGroup />
-        <SidebarGroup />
+            ))}
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <Button onClick={() => supabase.auth.signOut()} variant={"outline"}>

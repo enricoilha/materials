@@ -1,10 +1,5 @@
-import { AppSidebar } from "@/components/sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { createClientServer } from "@/lib/server";
-import Head from "next/head";
 import { redirect } from "next/navigation";
-import { ReactNode } from "react";
-import { Header } from "@/components/Header";
 
 export default async function DashboardLayout({
   children,

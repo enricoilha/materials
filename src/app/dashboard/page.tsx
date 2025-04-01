@@ -68,9 +68,9 @@ export default function DashboardPage() {
                 Histórico de Profissionais
               </Link>
             </Button>
-            <Button asChild>
+            {/* <Button asChild>
               <Link href="/dashboard/reports/export">Exportar Dados</Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
         <Tabs defaultValue="overview" className="space-y-4">

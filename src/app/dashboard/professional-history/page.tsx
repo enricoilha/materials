@@ -32,6 +32,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import "jspdf-autotable";
+import { formatToReais } from "@/lib/utils";
 
 export default function ProfessionalHistoryPage() {
   const [professionals, setProfessionals] = useState<any[]>([]);
@@ -41,7 +46,6 @@ export default function ProfessionalHistoryPage() {
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  // Buscar lista de profissionais
   useEffect(() => {
     async function fetchProfessionals() {
       try {
@@ -153,6 +157,93 @@ export default function ProfessionalHistoryPage() {
     }
   };
 
+  const exportToExcel = () => {
+    if (!professionalData || !historicalData) return;
+
+    // Preparar dados do profissional
+    const profissionalInfo = {
+      Nome: professionalData.nome,
+      Clínica:
+        professionalData.clinica?.sindicato ||
+        professionalData.clinica ||
+        "N/A",
+      Função: professionalData.funcao || "N/A",
+      Email: professionalData.email || "N/A",
+      Telefone: professionalData.telefone || "N/A",
+    };
+
+    // Preparar histórico de listas
+    const historicoFormatado = historicalData.map((item) => ({
+      Mês: getMonthName(item.month),
+      Status: statusMap[item.status as keyof typeof statusMap].label,
+      "Data de Criação": formatDate(item.created_at),
+      Valor: item.preco_total > 0 ? `R$ ${item.preco_total / 100}` : "-",
+    }));
+
+    // Criar workbook com duas planilhas
+    const wb = XLSX.utils.book_new();
+
+    // Adicionar dados do profissional
+    const wsProfissional = XLSX.utils.json_to_sheet([profissionalInfo]);
+    XLSX.utils.book_append_sheet(wb, wsProfissional, "Dados do Profissional");
+
+    // Adicionar histórico
+    const wsHistorico = XLSX.utils.json_to_sheet(historicoFormatado);
+    XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico");
+
+    // Exportar arquivo
+    XLSX.writeFile(wb, `historico_${professionalData.nome}.xlsx`);
+  };
+
+  const exportToPDF = async () => {
+    if (!professionalData) return;
+
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+
+    // Capture and add info section
+    const infoElement = document.getElementById("pdf-info-content");
+    if (infoElement) {
+      const canvas = await html2canvas(infoElement, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+      doc.addPage();
+    }
+
+    // Capture and add history section
+    const historyElement = document.getElementById("pdf-history-content");
+    if (historyElement) {
+      const canvas = await html2canvas(historyElement, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Check remaining space on current page
+      const currentPageHeight = doc.internal.pageSize.getHeight();
+      const currentY = (doc as any).lastAutoTable?.finalY || margin;
+      const spaceLeft = currentPageHeight - currentY - margin;
+
+      if (imgHeight > spaceLeft) {
+        doc.addPage();
+      }
+
+      doc.addImage(
+        imgData,
+        "PNG",
+        margin,
+        currentY + margin,
+        imgWidth,
+        imgHeight
+      );
+    }
+
+    doc.save(`historico_${professionalData.nome}.pdf`);
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -185,7 +276,12 @@ export default function ProfessionalHistoryPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button>Exportar Histórico</Button>
+          <Button onClick={exportToExcel} disabled={!professionalData}>
+            Exportar Excel
+          </Button>
+          <Button onClick={exportToPDF} disabled={!professionalData}>
+            Exportar PDF
+          </Button>
         </div>
 
         {isLoading ? (
@@ -194,169 +290,179 @@ export default function ProfessionalHistoryPage() {
           </div>
         ) : professionalData ? (
           <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Profissional</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Nome
-                    </p>
-                    <p className="text-lg">{professionalData.nome}</p>
+            <div id="pdf-info-content" className="bg-white">
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Informações do Profissional</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Nome
+                      </p>
+                      <p className="text-lg">{professionalData.nome}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Clínica
+                      </p>
+                      <p className="text-lg">
+                        {professionalData.clinica?.sindicato ||
+                          professionalData.clinica ||
+                          "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Função
+                      </p>
+                      <p className="text-lg">
+                        {professionalData.funcao || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Email
+                      </p>
+                      <p className="text-lg">
+                        {professionalData.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Telefone
+                      </p>
+                      <p className="text-lg">
+                        {professionalData.telefone || "N/A"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Clínica
-                    </p>
-                    <p className="text-lg">
-                      {professionalData.clinica?.sindicato ||
-                        professionalData.clinica ||
-                        "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Função
-                    </p>
-                    <p className="text-lg">
-                      {professionalData.funcao || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Email
-                    </p>
-                    <p className="text-lg">{professionalData.email || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Telefone
-                    </p>
-                    <p className="text-lg">
-                      {professionalData.telefone || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {chartData.length > 0 && (
+              {chartData.length > 0 && (
+                <Card className="mb-4">
+                  <CardHeader>
+                    <CardTitle>Histórico de Valores</CardTitle>
+                    <CardDescription>
+                      Valores mensais das listas de materiais
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        valor: {
+                          label: "Valor (R$)",
+                          color: "hsl(var(--chart-1))",
+                        },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={chartData}
+                          margin={{
+                            top: 5,
+                            right: 10,
+                            left: 10,
+                            bottom: 0,
+                          }}
+                        >
+                          <XAxis
+                            dataKey="month"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => `R$${value}`}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar
+                            dataKey="valor"
+                            fill="var(--color-valor)"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div id="pdf-history-content" className="bg-white">
               <Card>
                 <CardHeader>
-                  <CardTitle>Histórico de Valores</CardTitle>
+                  <CardTitle>Histórico de Listas</CardTitle>
                   <CardDescription>
-                    Valores mensais das listas de materiais
+                    Detalhamento das listas mensais
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer
-                    config={{
-                      valor: {
-                        label: "Valor (R$)",
-                        color: "hsl(var(--chart-1))",
-                      },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={chartData}
-                        margin={{
-                          top: 5,
-                          right: 10,
-                          left: 10,
-                          bottom: 0,
-                        }}
-                      >
-                        <XAxis
-                          dataKey="month"
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={8}
-                        />
-                        <YAxis
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={8}
-                          tickFormatter={(value) => `R$${value}`}
-                        />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar
-                          dataKey="valor"
-                          fill="var(--color-valor)"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Histórico de Listas</CardTitle>
-                <CardDescription>
-                  Detalhamento das listas mensais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mês</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data de Criação</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {historicalData.length > 0 ? (
-                      historicalData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{getMonthName(item.month)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                statusMap[item.status as keyof typeof statusMap]
-                                  .variant as "outline" | "default"
-                              }
-                            >
-                              {
-                                statusMap[item.status as keyof typeof statusMap]
-                                  .label
-                              }
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(item.created_at)}</TableCell>
-                          <TableCell className="text-right">
-                            {item.preco_total > 0
-                              ? `R$ ${item.preco_total}`
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/dashboard/list-details/${item.id}`}>
-                                Detalhes
-                              </Link>
-                            </Button>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mês</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Data de Criação</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historicalData.length > 0 ? (
+                        historicalData.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{getMonthName(item.month)}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  statusMap[
+                                    item.status as keyof typeof statusMap
+                                  ].variant as "outline" | "default"
+                                }
+                              >
+                                {
+                                  statusMap[
+                                    item.status as keyof typeof statusMap
+                                  ].label
+                                }
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(item.created_at)}</TableCell>
+                            <TableCell className="text-right">
+                              {item.preco_total > 0
+                                ? `R$ ${formatToReais(item.preco_total)}`
+                                : "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link
+                                  href={`/dashboard/list-details/${item.id}`}
+                                >
+                                  Detalhes
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center">
+                            Nenhuma lista encontrada para este profissional
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          Nenhuma lista encontrada para este profissional
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : (
           <div className="flex items-center justify-center h-64">

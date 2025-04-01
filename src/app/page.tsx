@@ -56,6 +56,10 @@ export default function HomePage() {
       if (!session) {
         redirect("/auth/login");
       }
+
+      if (session.user.user_metadata.role === "admin") {
+        redirect("/dashboard");
+      }
     };
 
     check();

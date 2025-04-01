@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Preparar dados para o gráfico
     const chartData = history.map((item) => ({
       month: item.month ? item.month.split("-")[1] : "N/A",
-      valor: item.preco_total || 0,
+      valor: (item.preco_total / 100) || 0,
     }));
 
     // Ordenar por mês
