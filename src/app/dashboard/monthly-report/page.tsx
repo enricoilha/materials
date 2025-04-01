@@ -271,17 +271,15 @@ export default function MonthlyReportPage() {
                             {prof.month ? getMonthName(prof.month) : "N/A"}
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                statusMap[prof.status as keyof typeof statusMap]
-                                  .variant as "outline" | "default"
-                              }
-                            >
-                              {
-                                statusMap[prof.status as keyof typeof statusMap]
-                                  .label
-                              }
-                            </Badge>
+                            {prof.status === "filled" && (
+                              <Badge variant="default">Preenchida</Badge>
+                            )}
+                            {prof.status === "not_filled" && (
+                              <Badge variant="outline">Não Preenchida</Badge>
+                            )}
+                            {prof.status === "delivered" && (
+                              <Badge variant="success">Entregue</Badge>
+                            )}
                           </TableCell>
                           <TableCell>{formatDate(prof.created_at)}</TableCell>
                           <TableCell className="text-right">

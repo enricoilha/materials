@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,22 +14,43 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ListHeader } from "./list-header";
-import { ListActions } from "./list-actions";
 import { ListItemsTable } from "./list-items-table";
 import { ListSummary } from "./list-summary";
+import { ListActions } from "./list-actions";
+import { DeliveryConfirmation } from "@/components/delivery/delivery-confirmation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const statusMap = {
+  pending: { label: "Pendente", variant: "outline" },
+  filled: { label: "Preenchida", variant: "default" },
+  delivered: { label: "Entregue", variant: "success" },
+};
 
 export default function ListDetailsPage() {
   const params = useParams();
   const listaId = params.id as string;
-
-  const [isLoading, setIsLoading] = useState(true);
   const [lista, setLista] = useState<any>(null);
   const [itens, setItens] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [deliveryConfirmation, setDeliveryConfirmation] = useState<any>(null);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
+    async function fetchUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    }
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    async function fetchListDetails() {
       try {
         const response = await fetch(`/api/reports/list-details/${listaId}`);
         if (!response.ok) {
@@ -37,20 +59,49 @@ export default function ListDetailsPage() {
         const data = await response.json();
         setLista(data.lista);
         setItens(data.itens);
+        setDeliveryConfirmation(data.deliveryConfirmation);
       } catch (error) {
         console.error("Erro ao buscar detalhes da lista:", error);
-        setError("Não foi possível carregar os detalhes da lista");
+        setError("Erro ao carregar detalhes da lista");
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
+    fetchListDetails();
   }, [listaId]);
 
-  const statusMap = {
-    not_filled: { label: "Não Preenchida", variant: "outline" },
-    filled: { label: "Preenchida", variant: "default" },
+  const handleDeliveryConfirm = async (photoUrl: string) => {
+    try {
+      const response = await fetch(`/api/delivery/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listaId,
+          photoUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao confirmar entrega");
+      }
+
+      // Refresh list details
+      const updatedResponse = await fetch(
+        `/api/reports/list-details/${listaId}`
+      );
+      if (updatedResponse.ok) {
+        const data = await updatedResponse.json();
+        setLista(data.lista);
+        setItens(data.itens);
+        setDeliveryConfirmation(data.deliveryConfirmation);
+      }
+    } catch (error) {
+      console.error("Erro ao confirmar entrega:", error);
+      throw error;
+    }
   };
 
   if (error) {
@@ -119,6 +170,42 @@ export default function ListDetailsPage() {
                 <ListSummary itens={itens} />
               </CardContent>
             </Card>
+
+            {user && lista?.status === "filled" && !deliveryConfirmation && (
+              <DeliveryConfirmation
+                listaId={listaId}
+                items={itens}
+                onConfirm={handleDeliveryConfirm}
+              />
+            )}
+
+            {deliveryConfirmation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Confirmação de Entrega</CardTitle>
+                  <CardDescription>
+                    Materiais entregues em{" "}
+                    {format(
+                      new Date(deliveryConfirmation.confirmed_at),
+                      "PPP",
+                      {
+                        locale: ptBR,
+                      }
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                    <Image
+                      src={deliveryConfirmation.photo_url}
+                      alt="Foto dos materiais entregues"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </main>

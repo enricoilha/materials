@@ -3,15 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 
 // Inicializa o cliente Supabase para uso no servidor
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const listaId = params.id;
 
@@ -24,7 +23,7 @@ export async function GET(
         *,
         profissional:profissionais (id, nome, funcao, email, telefone),
         clinica:clinicas (id, sindicato, endereco)
-      `
+      `,
       )
       .eq("id", listaId)
       .single();
@@ -38,22 +37,34 @@ export async function GET(
         `
         *,
         material:materiais (id, materiais, tipo, preco)
-      `
+      `,
       )
       .eq("lista_id", listaId)
       .order("id");
 
     if (itensError) throw itensError;
 
+    // Buscar confirmação de entrega
+    const { data: deliveryConfirmation, error: deliveryError } = await supabase
+      .from("delivery_confirmations")
+      .select("*")
+      .eq("lista_id", listaId)
+      .single();
+
+    if (deliveryError && deliveryError.code !== "PGRST116") {
+      throw deliveryError;
+    }
+
     return NextResponse.json({
       lista,
       itens,
+      deliveryConfirmation,
     });
   } catch (error) {
     console.error("Erro ao buscar detalhes da lista:", error);
     return NextResponse.json(
       { error: "Erro ao buscar detalhes da lista" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

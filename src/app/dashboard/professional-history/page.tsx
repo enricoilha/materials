@@ -36,7 +36,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
-import { formatToReais } from "@/lib/utils";
+import { capitalizeWords, formatToReais } from "@/lib/utils";
 
 export default function ProfessionalHistoryPage() {
   const [professionals, setProfessionals] = useState<any[]>([]);
@@ -270,18 +270,18 @@ export default function ProfessionalHistoryPage() {
               <SelectContent>
                 {professionals.map((prof) => (
                   <SelectItem key={prof.id} value={prof.id}>
-                    {prof.nome}
+                    {capitalizeWords(prof.nome)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={exportToExcel} disabled={!professionalData}>
+          {/* <Button onClick={exportToExcel} disabled={!professionalData}>
             Exportar Excel
           </Button>
           <Button onClick={exportToPDF} disabled={!professionalData}>
             Exportar PDF
-          </Button>
+          </Button> */}
         </div>
 
         {isLoading ? (

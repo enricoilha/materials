@@ -30,6 +30,47 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_confirmations: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          lista_id: string
+          observations: string | null
+          photo_url: string
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          lista_id: string
+          observations?: string | null
+          photo_url: string
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          lista_id?: string
+          observations?: string | null
+          photo_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_confirmations_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lista_materiais_itens: {
         Row: {
           created_at: string | null
