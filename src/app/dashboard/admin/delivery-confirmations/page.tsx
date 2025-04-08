@@ -258,11 +258,6 @@ export default function AdminDeliveryConfirmationsPage() {
                       </TableCell>
                       <TableCell>
                         {capitalizeWords(clinic.endereco || "") || "N/A"}
-                      <TableCell>{list.profissional.nome}</TableCell>
-                      <TableCell>{list.month}</TableCell>
-                      <TableCell>{getStatusBadge(list.status)}</TableCell>
-                      <TableCell className="text-right">
-                        {formatToReais(list.preco_total)}
                       </TableCell>
                     </TableRow>
                   ))}
