@@ -1,5 +1,8 @@
-import { clsx, type ClassValue } from "clsx";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { supabase } from "./supabase";
+import { Material } from "@/components/dashboard/admin/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -99,3 +102,77 @@ export function getMonthName(month: string): string {
 
   return `${monthNames[index]}/${year}`;
 }
+
+// Convert a data URL to a File object
+export const dataURLtoFile = async (
+  dataUrl: string,
+  filename: string,
+): Promise<File> => {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], filename, { type: "image/png" });
+};
+
+// Upload photo to Supabase storage
+export const uploadPhotoToStorage = async (
+  file: File,
+  clinicId: number,
+  filename: string,
+): Promise<string> => {
+  const path = `delivery-photos/clinics/${clinicId}/${filename}`;
+
+  const { error } = await supabase.storage
+    .from("confirmations")
+    .upload(path, file);
+
+  if (error) throw error;
+
+  return supabase.storage
+    .from("confirmations")
+    .getPublicUrl(path).data.publicUrl;
+};
+
+// Upload signature to Supabase storage
+export const uploadSignatureToStorage = async (
+  signatureData: string,
+  clinicId: number,
+  filename: string,
+): Promise<string> => {
+  const supabase = createClientComponentClient();
+  const signatureFile = await dataURLtoFile(signatureData, "signature.png");
+  const path = `signatures/clinics/${clinicId}/${filename}`;
+
+  const { error } = await supabase.storage
+    .from("confirmations")
+    .upload(path, signatureFile);
+
+  if (error) throw error;
+
+  return supabase.storage
+    .from("confirmations")
+    .getPublicUrl(path).data.publicUrl;
+};
+
+// Calculate statistics about missing items
+export const calculateMissingItemsStats = (
+  materials: Material[],
+  missingItems: Set<string>,
+) => {
+  if (missingItems.size === 0) {
+    return { count: 0, quantity: 0, value: 0 };
+  }
+
+  const missingQuantity = materials
+    .filter((mat) => missingItems.has(mat.id))
+    .reduce((sum, mat) => sum + mat.quantidade, 0);
+
+  const missingValue = materials
+    .filter((mat) => missingItems.has(mat.id))
+    .reduce((sum, mat) => sum + mat.preco * mat.quantidade, 0);
+
+  return {
+    count: missingItems.size,
+    quantity: missingQuantity,
+    value: missingValue,
+  };
+};
