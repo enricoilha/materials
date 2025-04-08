@@ -13,8 +13,20 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 const statusMap = {
-  not_filled: { label: "Não Preenchida", variant: "outline" },
   filled: { label: "Preenchida", variant: "default" },
+  not_filled: { label: "Não Preenchida", variant: "outline" },
+  delivered: { label: "Entregue", variant: "success" },
+  default: { label: "Desconhecido", variant: "outline" },
+};
+
+const getStatusBadge = (status: string) => {
+  const statusInfo =
+    statusMap[status as keyof typeof statusMap] || statusMap.default;
+  return (
+    <Badge variant={statusInfo.variant as "outline" | "default" | "success"}>
+      {statusInfo.label}
+    </Badge>
+  );
 };
 
 export function RecentLists() {
@@ -75,17 +87,7 @@ export function RecentLists() {
               {/* <TableCell>{list.descricao || "Lista de materiais"}</TableCell> */}
               <TableCell>{list.profissional}</TableCell>
               {/* <TableCell>{list.clinica}</TableCell> */}
-              <TableCell>
-                <Badge
-                  variant={
-                    statusMap[list.status as keyof typeof statusMap].variant as
-                      | "outline"
-                      | "default"
-                  }
-                >
-                  {statusMap[list.status as keyof typeof statusMap].label}
-                </Badge>
-              </TableCell>
+              <TableCell>{getStatusBadge(list.status)}</TableCell>
               <TableCell>
                 {new Date(list.data).toLocaleDateString("pt-BR")}
               </TableCell>

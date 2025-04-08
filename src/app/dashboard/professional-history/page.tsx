@@ -102,6 +102,18 @@ export default function ProfessionalHistoryPage() {
   const statusMap = {
     filled: { label: "Preenchida", variant: "default" },
     not_filled: { label: "Não Preenchida", variant: "outline" },
+    delivered: { label: "Entregue", variant: "success" },
+    default: { label: "Desconhecido", variant: "outline" },
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusInfo =
+      statusMap[status as keyof typeof statusMap] || statusMap.default;
+    return (
+      <Badge variant={statusInfo.variant as "outline" | "default" | "success"}>
+        {statusInfo.label}
+      </Badge>
+    );
   };
 
   // Função para formatar o nome do mês
@@ -175,7 +187,7 @@ export default function ProfessionalHistoryPage() {
     // Preparar histórico de listas
     const historicoFormatado = historicalData.map((item) => ({
       Mês: getMonthName(item.month),
-      Status: statusMap[item.status as keyof typeof statusMap].label,
+      Status: getStatusBadge(item.status),
       "Data de Criação": formatDate(item.created_at),
       Valor: item.preco_total > 0 ? `R$ ${item.preco_total / 100}` : "-",
     }));
@@ -419,21 +431,7 @@ export default function ProfessionalHistoryPage() {
                         historicalData.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell>{getMonthName(item.month)}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  statusMap[
-                                    item.status as keyof typeof statusMap
-                                  ].variant as "outline" | "default"
-                                }
-                              >
-                                {
-                                  statusMap[
-                                    item.status as keyof typeof statusMap
-                                  ].label
-                                }
-                              </Badge>
-                            </TableCell>
+                            <TableCell>{getStatusBadge(item.status)}</TableCell>
                             <TableCell>{formatDate(item.created_at)}</TableCell>
                             <TableCell className="text-right">
                               {item.preco_total > 0

@@ -184,6 +184,17 @@ export default function AdminDeliveryConfirmationsPage() {
     filled: { label: "Preenchida", variant: "default" },
     not_filled: { label: "Não Preenchida", variant: "outline" },
     delivered: { label: "Entregue", variant: "success" },
+    default: { label: "Desconhecido", variant: "outline" },
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusInfo =
+      statusMap[status as keyof typeof statusMap] || statusMap.default;
+    return (
+      <Badge variant={statusInfo.variant as "outline" | "default" | "success"}>
+        {statusInfo.label}
+      </Badge>
+    );
   };
 
   return (
@@ -226,19 +237,7 @@ export default function AdminDeliveryConfirmationsPage() {
                     >
                       <TableCell>{list.profissional.nome}</TableCell>
                       <TableCell>{list.month}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            statusMap[list.status as keyof typeof statusMap]
-                              .variant as "outline" | "default" | "success"
-                          }
-                        >
-                          {
-                            statusMap[list.status as keyof typeof statusMap]
-                              .label
-                          }
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{getStatusBadge(list.status)}</TableCell>
                       <TableCell className="text-right">
                         {formatToReais(list.preco_total)}
                       </TableCell>
