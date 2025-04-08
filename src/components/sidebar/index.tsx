@@ -1,5 +1,13 @@
 "use client";
-import { Calendar, DollarSign, Home, Inbox, LogOut, User } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  Home,
+  Inbox,
+  LogOut,
+  Package,
+  User,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -44,6 +52,11 @@ const items_managment = [
     title: "Gerenciar Preços",
     url: "/dashboard/materiais",
     icon: DollarSign,
+  },
+  {
+    title: "Confirmar Entregas", // New entry
+    url: "/dashboard/admin/delivery",
+    icon: Package, // Add Package icon to imports
   },
 ];
 export const AppSidebar = () => {
