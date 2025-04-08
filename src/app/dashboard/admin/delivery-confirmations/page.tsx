@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatToReais } from "@/lib/utils";
+import { capitalizeWords, formatToReais } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -54,9 +54,25 @@ interface DeliveryConfirmation {
   created_at: string;
 }
 
+interface Clinic {
+  id: number;
+  sindicato: string | null;
+  endereco: string | null;
+}
+
+interface ClinicDeliveryConfirmation {
+  id: string;
+  clinica_id: number;
+  photo_url: string;
+  observations: string;
+  created_at: string;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+}
+
 export default function AdminDeliveryConfirmationsPage() {
-  const [lists, setLists] = useState<List[]>([]);
-  const [selectedList, setSelectedList] = useState<List | null>(null);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [observations, setObservations] = useState("");
@@ -67,20 +83,23 @@ export default function AdminDeliveryConfirmationsPage() {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    fetchLists();
+    fetchClinics();
   }, []);
 
-  const fetchLists = async () => {
+  const fetchClinics = async () => {
     try {
-      const response = await fetch("/api/reports/lists");
-      if (!response.ok) throw new Error("Failed to fetch lists");
-      const data = await response.json();
-      setLists(data);
+      const { data, error } = await supabase
+        .from("clinicas")
+        .select("*")
+        .order("sindicato");
+
+      if (error) throw error;
+      setClinics(data || []);
     } catch (error) {
-      console.error("Error fetching lists:", error);
+      console.error("Error fetching clinics:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as listas",
+        description: "Não foi possível carregar as clínicas",
         variant: "destructive",
       });
     } finally {
@@ -112,7 +131,7 @@ export default function AdminDeliveryConfirmationsPage() {
   };
 
   const handleConfirmDelivery = async () => {
-    if (!selectedList || !photoFile || !isDelivered) {
+    if (!selectedClinic || !photoFile || !isDelivered) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -126,7 +145,7 @@ export default function AdminDeliveryConfirmationsPage() {
       // Generate unique filename
       const fileExt = photoFile.name.split(".").pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `delivery-photos/${selectedList.id}/${fileName}`;
+      const filePath = `delivery-photos/clinics/${selectedClinic.id}/${fileName}`;
 
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -143,13 +162,13 @@ export default function AdminDeliveryConfirmationsPage() {
       } = supabase.storage.from("confirmations").getPublicUrl(filePath);
 
       // Confirm delivery
-      const confirmResponse = await fetch("/api/delivery/confirm", {
+      const confirmResponse = await fetch("/api/delivery/confirm-clinic", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          listaId: selectedList.id,
+          clinicaId: selectedClinic.id,
           photoUrl: publicUrl,
           observations,
         }),
@@ -162,12 +181,12 @@ export default function AdminDeliveryConfirmationsPage() {
         description: "Entrega confirmada com sucesso",
       });
 
-      // Reset form and refresh lists
-      setSelectedList(null);
+      // Reset form and refresh clinics
+      setSelectedClinic(null);
       setPhotoFile(null);
       setObservations("");
       setIsDelivered(false);
-      fetchLists();
+      fetchClinics();
     } catch (error) {
       console.error("Error confirming delivery:", error);
       toast({
@@ -202,39 +221,43 @@ export default function AdminDeliveryConfirmationsPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">
-            Confirmação de Entregas
+            Confirmação de Entregas por Clínica
           </h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Listas Disponíveis</CardTitle>
+              <CardTitle>Clínicas Disponíveis</CardTitle>
               <CardDescription>
-                Selecione uma lista para confirmar a entrega
+                Selecione uma clínica para confirmar a entrega
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Profissional</TableHead>
-                    <TableHead>Mês</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Nome da Clínica</TableHead>
+                    <TableHead>Endereço</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lists.map((list) => (
+                  {clinics.map((clinic) => (
                     <TableRow
-                      key={list.id}
+                      key={clinic.id}
                       className={`cursor-pointer ${
-                        selectedList?.id === list.id
+                        selectedClinic?.id === clinic.id
                           ? "bg-muted"
                           : "hover:bg-muted/50"
                       }`}
-                      onClick={() => setSelectedList(list)}
+                      onClick={() => setSelectedClinic(clinic)}
                     >
+                      <TableCell>
+                        {capitalizeWords(clinic.sindicato || "") ||
+                          `Clínica ${clinic.id}`}
+                      </TableCell>
+                      <TableCell>
+                        {capitalizeWords(clinic.endereco || "") || "N/A"}
                       <TableCell>{list.profissional.nome}</TableCell>
                       <TableCell>{list.month}</TableCell>
                       <TableCell>{getStatusBadge(list.status)}</TableCell>
@@ -252,13 +275,15 @@ export default function AdminDeliveryConfirmationsPage() {
             <CardHeader>
               <CardTitle>Confirmar Entrega</CardTitle>
               <CardDescription>
-                {selectedList
-                  ? `Confirmar entrega para ${selectedList.profissional.nome}`
-                  : "Selecione uma lista para confirmar a entrega"}
+                {selectedClinic
+                  ? `Confirmar entrega para ${
+                      selectedClinic.sindicato || `Clínica ${selectedClinic.id}`
+                    }`
+                  : "Selecione uma clínica para confirmar a entrega"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedList ? (
+              {selectedClinic ? (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="photo">Foto dos Materiais</Label>
@@ -308,7 +333,7 @@ export default function AdminDeliveryConfirmationsPage() {
                 </>
               ) : (
                 <p className="text-center text-muted-foreground">
-                  Selecione uma lista para confirmar a entrega
+                  Selecione uma clínica para confirmar a entrega
                 </p>
               )}
             </CardContent>
