@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-
-// Component imports
 import { ClinicSelector } from "./clinic-selector";
 import { ClinicHeader } from "./clinicHeader";
 import { MaterialsList } from "./materialsList";
@@ -11,23 +9,16 @@ import { PhotoCapture } from "./photoCapture";
 import { SignatureCapture } from "./signatureCapture";
 import { DeliveryObservations } from "./deliveryObservations";
 import { DeliveryConfirmButton } from "./deliveryConfirmButton";
-
-// Type imports
 import { Clinic, Material } from "./types";
-
-// Utility functions
 import { uploadPhotoToStorage, uploadSignatureToStorage } from "@/lib/utils";
 
 export const ClinicDeliveryConfirmation: React.FC = () => {
-  // State for clinics and selected clinic
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // State for materials
   const [materials, setMaterials] = useState<Material[]>([]);
 
-  // State for form
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -35,24 +26,20 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
   const [isDeliveryAgreed, setIsDeliveryAgreed] = useState(false);
   const [missingItems, setMissingItems] = useState<Set<string>>(new Set());
 
-  // State for submission
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const supabase = createClientComponentClient();
 
-  // Fetch clinics on component mount
   useEffect(() => {
     fetchClinics();
   }, []);
 
-  // When a clinic is selected, fetch all materials for that clinic's lists
   useEffect(() => {
     if (selectedClinic) {
       fetchMaterialsForClinic(selectedClinic.id);
     }
   }, [selectedClinic]);
 
-  // Fetch all clinics
   const fetchClinics = async () => {
     try {
       setIsLoading(true);
@@ -71,11 +58,9 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
     }
   };
 
-  // Fetch all materials for a clinic
   const fetchMaterialsForClinic = async (clinicId: number) => {
     try {
       setIsLoading(true);
-      // First get all active lists for this clinic
       const { data: lists, error: listsError } = await supabase
         .from("listas")
         .select(
@@ -96,7 +81,6 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
         return;
       }
 
-      // Then get all materials from those lists
       const materialsPromises = lists.map(async (list: any) => {
         const { data: items, error: itemsError } = await supabase
           .from("lista_materiais_itens")
@@ -169,32 +153,26 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
     setPhotoPreview(null);
   };
 
-  // Handler for capturing a signature
   const handleCaptureSignature = (data: string) => {
     setSignatureData(data);
   };
 
-  // Handler for removing a signature
   const handleRemoveSignature = () => {
     setSignatureData(null);
   };
 
-  // Handler for updating observations
   const handleObservationsChange = (value: string) => {
     setObservations(value);
   };
 
-  // Handler for agreement checkbox
   const handleAgreementChange = (checked: boolean) => {
     setIsDeliveryAgreed(checked);
   };
 
-  // Check if the form is valid
   const isFormValid = () => {
     return !!photoFile && !!signatureData;
   };
 
-  // Reset form to initial state
   const resetForm = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -204,7 +182,6 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
     setMissingItems(new Set());
   };
 
-  // Submit the delivery confirmation
   const handleSubmitDelivery = async () => {
     if (!selectedClinic) {
       toast.error("Selecione uma clínica");
@@ -228,7 +205,6 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // 1. Upload photo to storage
       const photoFilename = `${uuidv4()}.jpg`;
       const photoUrl = await uploadPhotoToStorage(
         photoFile,
@@ -236,7 +212,6 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
         photoFilename
       );
 
-      // 2. Upload signature to storage
       const signatureFilename = `${uuidv4()}.png`;
       const signatureUrl = await uploadSignatureToStorage(
         signatureData,
@@ -244,7 +219,6 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
         signatureFilename
       );
 
-      // 3. Save delivery confirmation to database with missing items
       const missingItemsArray = Array.from(missingItems);
       const response = await fetch("/api/delivery/confirm-clinic", {
         method: "POST",
@@ -266,11 +240,9 @@ export const ClinicDeliveryConfirmation: React.FC = () => {
 
       toast.success("Entrega confirmada com sucesso!");
 
-      // Reset form and go back to clinic selection
       setSelectedClinic(null);
       resetForm();
 
-      // Refresh clinics list
       fetchClinics();
     } catch (error) {
       console.error("Error confirming delivery:", error);

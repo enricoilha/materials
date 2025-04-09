@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, X } from "lucide-react";
+import { Camera, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface PhotoCaptureProps {
@@ -24,8 +24,37 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   onRemovePhoto,
 }) => {
   const [showCamera, setShowCamera] = useState(false);
+  const [isCameraAvailable, setIsCameraAvailable] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [usingFrontCamera, setUsingFrontCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Check if camera is available on mount
+  useEffect(() => {
+    const checkCameraAvailability = async () => {
+      try {
+        if (
+          !navigator.mediaDevices ||
+          typeof navigator.mediaDevices.getUserMedia !== "function"
+        ) {
+          setIsCameraAvailable(false);
+          return;
+        }
+
+        // Just check if we can get permissions without actually starting the camera
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        setIsCameraAvailable(true);
+      } catch (error) {
+        console.warn("Camera not available:", error);
+        setIsCameraAvailable(false);
+      }
+    };
+
+    checkCameraAvailability();
+  }, []);
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,25 +80,107 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   };
 
   // Handle camera capture
-  const startCamera = async () => {
+  const startCamera = async (useFrontCamera = false) => {
     try {
-      setShowCamera(true);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      // Check if mediaDevices API is available
+      if (
+        !navigator.mediaDevices ||
+        typeof navigator.mediaDevices.getUserMedia !== "function"
+      ) {
+        throw new Error(
+          "Camera access not supported in this browser or device"
+        );
       }
-    } catch (error) {
+
+      // Stop previous stream if exists
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      setIsLoading(true);
+      setCameraError(null);
+      setShowCamera(true);
+      setUsingFrontCamera(useFrontCamera);
+
+      // Small delay to ensure the video element is mounted
+      setTimeout(async () => {
+        try {
+          // For mobile, prioritize rear camera
+          const constraints = {
+            video: {
+              facingMode: { ideal: useFrontCamera ? "user" : "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          streamRef.current = stream;
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            // Wait for the video to be ready before allowing capture
+            videoRef.current.onloadedmetadata = () => {
+              if (videoRef.current) videoRef.current.play();
+              setIsLoading(false);
+            };
+          }
+        } catch (streamError) {
+          console.error("Error starting camera stream:", streamError);
+          // Try with simpler constraints as fallback
+          try {
+            const simpleStream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+            });
+            streamRef.current = simpleStream;
+            if (videoRef.current) {
+              videoRef.current.srcObject = simpleStream;
+              videoRef.current.onloadedmetadata = () => {
+                if (videoRef.current) videoRef.current.play();
+                setIsLoading(false);
+              };
+            }
+          } catch (fallbackError) {
+            throw fallbackError;
+          }
+        }
+      }, 300);
+    } catch (error: any) {
       console.error("Error accessing camera:", error);
-      toast.error("Não foi possível acessar a câmera");
+      let errorMessage = "Não foi possível acessar a câmera.";
+
+      // Check for permission errors
+      if (
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError"
+      ) {
+        errorMessage =
+          "Permissão de câmera negada. Por favor, permita o acesso à câmera nas configurações do seu navegador.";
+      } else if (
+        error.name === "NotFoundError" ||
+        error.name === "DevicesNotFoundError"
+      ) {
+        errorMessage = "Nenhuma câmera encontrada no seu dispositivo.";
+      } else if (
+        error.name === "NotReadableError" ||
+        error.name === "TrackStartError"
+      ) {
+        errorMessage =
+          "Não foi possível acessar a câmera. Ela pode estar sendo usada por outro aplicativo.";
+      }
+
+      setCameraError(errorMessage);
+      toast.error(
+        "Não foi possível acessar a câmera. Tente usar o upload de imagem."
+      );
       setShowCamera(false);
+      setIsLoading(false);
     }
+  };
+
+  const flipCamera = () => {
+    startCamera(!usingFrontCamera);
   };
 
   const capturePhoto = () => {
@@ -104,13 +215,15 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   };
 
   const closeCamera = () => {
-    if (videoRef.current) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-        videoRef.current.srcObject = null;
-      }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     setShowCamera(false);
   };
 
@@ -141,15 +254,17 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <Button
-              type="button"
-              variant="secondary"
-              className="flex items-center gap-2"
-              onClick={startCamera}
-            >
-              <Camera className="h-5 w-5" />
-              Tirar uma foto
-            </Button>
+            {isCameraAvailable && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex items-center gap-2"
+                onClick={() => startCamera()}
+              >
+                <Camera className="h-5 w-5" />
+                Tirar uma foto
+              </Button>
+            )}
 
             <div className="relative">
               <Input
@@ -163,7 +278,9 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 htmlFor="photo"
                 className="text-xs text-muted-foreground mt-1"
               >
-                Ou selecione uma imagem do dispositivo
+                {isCameraAvailable
+                  ? "Ou selecione uma imagem do dispositivo"
+                  : "Selecione uma imagem do dispositivo"}
               </Label>
             </div>
           </div>
@@ -181,15 +298,63 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 Cancelar
               </Button>
               <span>Câmera</span>
-              <div className="w-16"></div> {/* Spacer for alignment */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white"
+                onClick={flipCamera}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative bg-black flex items-center justify-center">
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+                  <div className="text-white text-center">
+                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p>Iniciando câmera...</p>
+                  </div>
+                </div>
+              )}
+
+              {cameraError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10 p-4">
+                  <div className="text-white text-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8 mx-auto mb-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <p className="text-sm">{cameraError}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 text-white border-white hover:bg-white/20"
+                      onClick={closeCamera}
+                    >
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="absolute inset-0 w-full h-full object-cover"
+                muted
+                className="max-w-full max-h-full object-contain"
               />
             </div>
 
@@ -199,6 +364,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 size="lg"
                 className="rounded-full w-16 h-16 bg-white border-4 border-gray-300"
                 onClick={capturePhoto}
+                disabled={isLoading}
               />
             </div>
 
